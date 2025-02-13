@@ -17,6 +17,8 @@ export interface AtomEntry {
   author?: AtomAuthor[];
   /** Contains or links to the complete content of the entry. Content must be provided if there is no alternate link, and should be provided if there is no summary. */
   content?: AtomContent;
+
+  rawContent?: Element;
   /** Identifies a related Web page. The type of relation is defined by the rel attribute. An entry is limited to one alternate per type and hreflang. An entry must contain an alternate link if there is no content element. */
   link?: AtomLink[];
   /** Conveys a short summary, abstract, or excerpt of the entry. Summary should be provided if there either is no content provided for the entry, or that content is not inline (i.e., contains a src attribute), or if the content is encoded in base64. */

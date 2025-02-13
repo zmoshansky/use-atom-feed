@@ -3,7 +3,7 @@ import { AtomEntry, AtomSource } from './AtomEntry';
 import { AtomFeed } from './AtomFeed';
 import * as Guards from './index.guard';
 
-import { sanitize } from 'dompurify';
+import DOMPurify from 'dompurify';
 
 /** searches for a tag in the node list, prevents recursive searches */
 const findByTag = (nodes: Iterable<Element> | ArrayLike<Element> | HTMLCollection, tagName: string) => Array.from(nodes).find(e => e.nodeName === tagName);
@@ -19,7 +19,7 @@ export function parseAtomFeed(data: string): AtomFeed {
   const parser = new DOMParser();
   const xml = parser.parseFromString(data, 'text/xml');
   const feed = findChildTag(xml, 'feed');
-  if(feed) {
+  if (feed) {
     return {
       id: sanitizeTextContent(findChildTag(feed, 'id')) ?? '',
       title: parseAtomText(findChildTag(feed, 'title')),
@@ -50,6 +50,7 @@ export function parseAtomEntry(entry: Element): AtomEntry {
     updated: new Date(findChildTag(entry, 'updated')?.textContent ?? 0),
     author: filterChildTags(entry, 'author').map(author => parseAtomPerson(author)),
     content: parseAtomContent(findChildTag(entry, 'content')),
+    rawContent: findChildTag(entry, 'content'),
     link: filterChildTags(entry, 'link').map(link => parseAtomLink(link)),
     summary: parseAtomText(findChildTag(entry, 'summary')),
     category: filterChildTags(entry, 'category').map(category => parseAtomCategory(category)),
@@ -62,32 +63,32 @@ export function parseAtomEntry(entry: Element): AtomEntry {
 
 /** safely decode text content */
 export function safelyDecodeAtomText(type: AtomTextType | undefined, element: Element | undefined): string {
-  if(element !== undefined) {
+  if (element !== undefined) {
     // If type="xhtml", then this element contains inline xhtml, wrapped in a div element.
     // This means that the existing `.innerHTML` is ready to be santized
-    if(type === 'xhtml') return sanitize(element.innerHTML);
+    if (type === 'xhtml') return DOMPurify.sanitize(element.innerHTML);
     // If type="html", then this element contains entity escaped html.
     // using `.textContent` will un-escape the text
-    else if(type === 'html') return sanitize(element.textContent ?? '');
+    else if (type === 'html') return DOMPurify.sanitize(element.textContent ?? '');
     // If type="text", then this element contains plain text with no entity escaped html.
     // This means that the content of `.innerHTML` are **intended** to be safe.
     // However, we don't want to leave an attack vector open, so we're going to sanitize it anyway.
-    else if(type === 'text') return sanitize(element.innerHTML);
-    else return sanitize(element.textContent ?? '');
+    else if (type === 'text') return DOMPurify.sanitize(element.innerHTML);
+    else return DOMPurify.sanitize(element.textContent ?? '');
   }
   return '';
 }
 
 /** shortcut for safely decoding the `.textContent` value of an element */
-export function sanitizeTextContent(element: Element | undefined): string | undefined { 
-  return element !== undefined ? sanitize(element.textContent ?? '') : undefined;
+export function sanitizeTextContent(element: Element | undefined): string | undefined {
+  return element !== undefined ? DOMPurify.sanitize(element.textContent ?? '') : undefined;
 }
 
 /** shortcut for safely decoding the an attribute value of an element */
-export function sanitizeTextAttribute(element: Element | undefined, attributeName: string): string | undefined  {
-  if(element !== undefined) {
+export function sanitizeTextAttribute(element: Element | undefined, attributeName: string): string | undefined {
+  if (element !== undefined) {
     let attr: string | null;
-    if((attr = element.getAttribute(attributeName)) !== null) {
+    if ((attr = element.getAttribute(attributeName)) !== null) {
       return attr;
     }
   }
@@ -96,7 +97,7 @@ export function sanitizeTextAttribute(element: Element | undefined, attributeNam
 
 export function parseAtomContent(content: Element | undefined): AtomContent {
   const rawType = sanitizeTextAttribute(content, 'type');
-  const type = Guards.isAtomTextType(rawType) ? rawType as AtomTextType : undefined; 
+  const type = Guards.isAtomTextType(rawType) ? rawType as AtomTextType : undefined;
   return {
     type,
     src: sanitizeTextAttribute(content, 'src'),
@@ -107,7 +108,7 @@ export function parseAtomContent(content: Element | undefined): AtomContent {
 
 export function parseAtomText(text: Element | undefined): AtomText {
   const rawType = sanitizeTextAttribute(text, 'type');
-  const type = Guards.isAtomTextType(rawType) ? rawType as AtomTextType : undefined; 
+  const type = Guards.isAtomTextType(rawType) ? rawType as AtomTextType : undefined;
   return {
     type,
     value: safelyDecodeAtomText(type, text)
@@ -116,7 +117,7 @@ export function parseAtomText(text: Element | undefined): AtomText {
 
 export function parseAtomPerson(person: Element): AtomPerson {
   return {
-    name: sanitize(findChildTag(person, 'name')?.textContent ?? ''),
+    name: DOMPurify.sanitize(findChildTag(person, 'name')?.textContent ?? ''),
     uri: sanitizeTextContent(findChildTag(person, 'uri')),
     email: sanitizeTextContent(findChildTag(person, 'email')),
   }
@@ -143,7 +144,7 @@ export function parseAtomCategory(category: Element): AtomCategory {
 }
 
 export function parseAtomSource(source: Element | undefined): AtomSource | undefined {
-  if(source !== undefined) {
+  if (source !== undefined) {
     return {
       id: sanitizeTextContent(findChildTag(source, 'id')) ?? '',
       title: sanitizeTextContent(findChildTag(source, 'title')) ?? '',

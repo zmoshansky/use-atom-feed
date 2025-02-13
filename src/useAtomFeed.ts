@@ -24,7 +24,7 @@ export function useAtomFeed(feedURL: string, options?: SWRConfiguration): Respon
   });
 
   // if data is defined
-  if(data) {
+  if (data) {
     // attempt to decode
     try {
       const decoded = parseAtomFeed(data);
@@ -35,7 +35,7 @@ export function useAtomFeed(feedURL: string, options?: SWRConfiguration): Respon
         isValidating
       }
     }
-    catch(parseError) {
+    catch (parseError) {
       // return a decode failure
       return {
         data: undefined,
