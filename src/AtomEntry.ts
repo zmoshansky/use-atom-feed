@@ -4,6 +4,7 @@
 //
 
 import { AtomAuthor, AtomCategory, AtomContent, AtomContributor, AtomLink, AtomRights, AtomSummary, AtomTitle } from './AtomCommon';
+import { AtomMediaGroup } from './AtomMediaGroup';
 
 /** An example of an entry would be a single post on a weblog.  */
 export interface AtomEntry {
@@ -19,6 +20,7 @@ export interface AtomEntry {
   content?: AtomContent;
 
   rawContent?: Element;
+  mediaGroup?: AtomMediaGroup;
   /** Identifies a related Web page. The type of relation is defined by the rel attribute. An entry is limited to one alternate per type and hreflang. An entry must contain an alternate link if there is no content element. */
   link?: AtomLink[];
   /** Conveys a short summary, abstract, or excerpt of the entry. Summary should be provided if there either is no content provided for the entry, or that content is not inline (i.e., contains a src attribute), or if the content is encoded in base64. */

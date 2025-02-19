@@ -4,6 +4,7 @@ import { AtomFeed } from './AtomFeed';
 import * as Guards from './index.guard';
 
 import DOMPurify from 'dompurify';
+import { AtomMediaCommunity, AtomMediaGroup, AtomMediaLink } from './AtomMediaGroup';
 
 /** searches for a tag in the node list, prevents recursive searches */
 const findByTag = (nodes: Iterable<Element> | ArrayLike<Element> | HTMLCollection, tagName: string) => Array.from(nodes).find(e => e.nodeName === tagName);
@@ -58,6 +59,7 @@ export function parseAtomEntry(entry: Element): AtomEntry {
     published: findChildTag(entry, 'published') ? new Date(findChildTag(entry, 'published')?.textContent ?? 0) : undefined,
     rights: parseAtomText(findChildTag(entry, 'rights')),
     source: parseAtomSource(findChildTag(entry, 'source')),
+    mediaGroup: parseAtomMediaGroup(findChildTag(entry, 'media:group')),
   };
 }
 
@@ -152,4 +154,50 @@ export function parseAtomSource(source: Element | undefined): AtomSource | undef
     };
   }
   return undefined;
+}
+
+// Functions for parsing YouTube Media Groups
+export function parseAtomMediaGroup(mediaGroup: Element | undefined): AtomMediaGroup | undefined {
+  if (mediaGroup !== undefined) {
+    const content = findChildTag(mediaGroup, 'media:content');
+    const thumbnail = findChildTag(mediaGroup, 'media:thumbnail');
+
+    return {
+      title: sanitizeTextContent(findChildTag(mediaGroup, 'media:title')) ?? '',
+      content: content ? parseAtomMediaLink(content) : undefined,
+      thumbnail: thumbnail ? parseAtomMediaLink(thumbnail) : undefined,
+      description: sanitizeTextContent(findChildTag(mediaGroup, 'media:description')) ?? '',
+      community: parseAtomMediaCommunity(findChildTag(mediaGroup, 'media:community'))
+    };
+  }
+  return undefined;
+}
+
+export function parseAtomMediaCommunity(mediaCommunity: Element | undefined): AtomMediaCommunity | undefined {
+  if (mediaCommunity !== undefined) {
+    const starRating = findChildTag(mediaCommunity, 'media:starRating');
+    const statistics = findChildTag(mediaCommunity, 'media:statistics');
+
+    return {
+      starRating: {
+        count: Number(sanitizeTextAttribute(starRating, 'count')),
+        average: Number(sanitizeTextAttribute(starRating, 'average')),
+        min: Number(sanitizeTextAttribute(starRating, 'min')),
+        max: Number(sanitizeTextAttribute(starRating, 'max')),
+      },
+      statistics: {
+        view: Number(sanitizeTextAttribute(statistics, 'views'))
+      }
+    }
+  }
+  return undefined;
+}
+
+export function parseAtomMediaLink(link: Element): AtomMediaLink {
+  return {
+    url: sanitizeTextAttribute(link, 'url') ?? '',
+    type: sanitizeTextAttribute(link, 'type'),
+    width: Number(sanitizeTextAttribute(link, 'width')),
+    height: Number(sanitizeTextAttribute(link, 'height')),
+  };
 }
